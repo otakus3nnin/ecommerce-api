@@ -1,0 +1,9 @@
+{
+  "ext": "js,ts,json",
+  "ignore": [
+    "node_modules"
+  ],
+  "execMap": {
+    "ts": "tsx"
+  }
+}
