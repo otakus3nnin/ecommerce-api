@@ -1,0 +1,69 @@
+services:
+  api:
+    build: .
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+    env_file:
+      - path: ./.env
+        required: true
+
+    networks:
+      - api-network
+    ports:
+      - 3000:3000
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+    secrets:
+      - db-password
+    develop:
+      watch:
+        - action: rebuild
+          path: package.json
+
+  db:
+    image: postgres
+    restart: unless-stopped
+    user: postgres
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    secrets:
+      - db-password
+    networks:
+      - api-network
+    volumes: 
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - 5434:5432
+
+  redis:
+    image: redis
+    restart: always
+    networks:
+      - api-network
+    volumes:
+      - redis-data:/var/lib/redis/data
+
+volumes:
+  pg-data:
+  redis-data:
+
+secrets:
+  db-password:
+    file: db/password.txt
+
+networks:
+  api-network:
+    driver: bridge
